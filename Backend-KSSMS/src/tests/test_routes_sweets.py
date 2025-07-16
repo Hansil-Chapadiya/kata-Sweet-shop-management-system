@@ -13,7 +13,7 @@ async def test_add_sweet_success():
             "quantity": 10,
             "discount": 10,
             "description": "Top tier",
-            "image_url": "https://example.com/kaju.jpg"
+            "image_url": "https://images.unsplash.com/photo-1667185486143-a2d5609f5229?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
         })
     assert response.status_code == 201
     assert response.json()["name"] == "Kaju Katli"
