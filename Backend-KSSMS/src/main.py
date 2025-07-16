@@ -5,6 +5,6 @@ app = FastAPI()
 
 # app.include_router(sweet_routes.router, prefix="/sweets")
 
-@app.get("/")
+@app.get("/home")
 def home():
     return {"msg": "Sweet Shop Management System 🧁"}
