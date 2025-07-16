@@ -10,3 +10,9 @@ app = FastAPI()
 @app.get("/")
 def root():
     return {"msg": "Sweet Shop Backend is Live 🍭"}
+
+
+@app.get("/home")
+def home():
+    return {"msg": "Sweet Shop Backend is Live 🍭"}
+
