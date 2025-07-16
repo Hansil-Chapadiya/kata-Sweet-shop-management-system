@@ -11,4 +11,9 @@ app = FastAPI()
 def root():
     return {"msg": "Sweet Shop Backend is Live 🍭"}
 
+@app.get("/ping")
+def ping():
+    return {"msg": "pong"}
+
+
 app.include_router(sweet_routes.sweetRouter, prefix="/sweets", tags=["Sweets"])
