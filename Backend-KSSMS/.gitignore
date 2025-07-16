@@ -1,0 +1,38 @@
+# Virtual Environment
+virtualenvbackend/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# IDE/config files
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+
+# SQLite DB (if local)
+*.sqlite3
+*.db
+
+# Test/report artifacts
+coverage/
+*.coverage
+htmlcov/
+pytest_cache/
+
+# Logs
+*.log
+
+# Local build or dist files
+build/
+dist/
+*.egg-info/
