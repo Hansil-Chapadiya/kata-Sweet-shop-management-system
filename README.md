@@ -60,6 +60,30 @@ A full-stack **Sweet Shop Inventory Management System** to:
 
 ---
 
+# 🍬 Kata Sweet Shop Management System
+
+## 🧁 Dashboard
+![Dashboard](./assets/Dashboard.png)
+
+## ➕ Add Sweet
+![Add Sweet](./assets/addSweet.png)
+
+## 🗑️ Delete Sweet
+![Delete Sweet](./assets/Delete%20Sweet.png)
+
+## 🏠 Home Page
+![Home Page](./assets/HomePage.png)
+
+## 📦 Purchase Screen
+![Purchase](./assets/Purchase.png)
+
+## 🔁 Restock Screen
+![Restock](./assets/Restock.png)
+
+## ✅ Success Alert
+![Success](./assets/Success.png)
+
+
 ## ⚙️ Environment Variables
 
 ```env
@@ -118,26 +142,3 @@ This is a full-stack **Sweet Shop Inventory Management System** that allows you 
 
 ```env
 NEXT_PUBLIC_API_URL=https://kata-sweet-shop-api.onrender.com
-
-# 🍬 Kata Sweet Shop Management System
-
-## 🧁 Dashboard
-![Dashboard](./assets/Dashboard.png)
-
-## ➕ Add Sweet
-![Add Sweet](./assets/addSweet.png)
-
-## 🗑️ Delete Sweet
-![Delete Sweet](./assets/Delete%20Sweet.png)
-
-## 🏠 Home Page
-![Home Page](./assets/HomePage.png)
-
-## 📦 Purchase Screen
-![Purchase](./assets/Purchase.png)
-
-## 🔁 Restock Screen
-![Restock](./assets/Restock.png)
-
-## ✅ Success Alert
-![Success](./assets/Success.png)
