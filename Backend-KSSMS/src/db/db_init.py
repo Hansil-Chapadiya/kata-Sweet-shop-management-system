@@ -20,6 +20,16 @@ client = AsyncIOMotorClient(
 database = client["kksm"]
 
 
+def setup_mongo_events(app: FastAPI):
+    @app.on_event("startup")
+    async def startup():
+        await connect_to_mongo(app)
+
+    @app.on_event("shutdown")
+    async def shutdown():
+        client.close()
+
+
 async def connect_to_mongo(app: FastAPI):
     app.state.mongodb = database
     app.state.mongodb_client = client

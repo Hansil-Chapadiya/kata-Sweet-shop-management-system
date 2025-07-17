@@ -3,20 +3,14 @@ from src.routes import sweet_routes  # Import the APIRouter for sweet-related en
 from fastapi.middleware.cors import (
     CORSMiddleware,
 )  # Import CORS middleware for handling cross-origin requests
-from src.db.db_init import connect_to_mongo, close_mongo_connection # Import MongoDB connection functions
+from src.db.db_init import setup_mongo_events
 
 # from src.routes import * # This line is commented out; typically you'd import specific routers
 
 # Initialize the FastAPI application
 app = FastAPI()
 
-@app.on_event("startup")
-async def startup_event():
-    await connect_to_mongo(app)
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await close_mongo_connection(app)
+setup_mongo_events(app)
 
 # Configure CORS (Cross-Origin Resource Sharing) middleware
 # This allows your frontend (e.g., Next.js app) running on a different origin
