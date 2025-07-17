@@ -33,9 +33,9 @@ A full-stack **Sweet Shop Inventory Management System** to:
 
 ## 🛠 Tech Stack
 
-| Frontend      | Backend         | Database | Styling     |
-|---------------|------------------|----------|--------------|
-| Angular 14    | FastAPI (Python) | MongoDB  | SCSS / CSS   |
+| Frontend   | Backend          | Database | Styling    |
+| ---------- | ---------------- | -------- | ---------- |
+| Angular 14 | FastAPI (Python) | MongoDB  | SCSS / CSS |
 
 ---
 
@@ -88,9 +88,9 @@ This is a full-stack **Sweet Shop Inventory Management System** that allows you 
 
 ## 🛠 Tech Stack
 
-| Frontend         | Backend         | Database  | Styling       |
-|------------------|------------------|-----------|----------------|
-| Next.js (React)  | FastAPI (Python) | MongoDB   | Tailwind CSS   |
+| Frontend        | Backend          | Database | Styling      |
+| --------------- | ---------------- | -------- | ------------ |
+| Next.js (React) | FastAPI (Python) | MongoDB  | Tailwind CSS |
 
 ---
 
@@ -118,3 +118,26 @@ This is a full-stack **Sweet Shop Inventory Management System** that allows you 
 
 ```env
 NEXT_PUBLIC_API_URL=https://kata-sweet-shop-api.onrender.com
+
+# 🍬 Kata Sweet Shop Management System
+
+## 🧁 Dashboard
+![Dashboard](./assets/Dashboard.png)
+
+## ➕ Add Sweet
+![Add Sweet](./assets/addSweet.png)
+
+## 🗑️ Delete Sweet
+![Delete Sweet](./assets/Delete%20Sweet.png)
+
+## 🏠 Home Page
+![Home Page](./assets/HomePage.png)
+
+## 📦 Purchase Screen
+![Purchase](./assets/Purchase.png)
+
+## 🔁 Restock Screen
+![Restock](./assets/Restock.png)
+
+## ✅ Success Alert
+![Success](./assets/Success.png)
