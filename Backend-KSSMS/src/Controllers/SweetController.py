@@ -1,19 +1,20 @@
-#standard library imports
+# standard library imports
 from fastapi import HTTPException, Body, BackgroundTasks
 from fastapi.responses import JSONResponse
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-#local imports
+# local imports
 from config import params
 from ..db.db_init import get_database
 from ..Models.Sweet import SweetBase
 from response_error import ErrorResponseModel
 
-#third-party imports
+# third-party imports
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from bson import ObjectId
 
 
 class SweetController:
@@ -29,6 +30,266 @@ class SweetController:
         """
         database = await get_database()
         return database
+
+    @classmethod
+    async def get_sweets(cls) -> JSONResponse:
+        """
+        Retrieves all sweets from the database.
+        Returns a JSON response with the list of sweets.
+        """
+        try:
+            collection = await cls.get_collection()
+            sweets = collection["Sweets"]
+            sweet_list = []
+
+            async for sweet in sweets.find():
+                sweet["_id"] = str(sweet["_id"])  # Convert ObjectId to string
+                sweet_list.append(sweet)
+
+            return JSONResponse(
+                content={
+                    "status": True,
+                    "sweets": sweet_list,
+                    "message": "Sweets retrieved successfully",
+                }
+            )
+        except Exception as e:
+            print(f"Error retrieving sweets: {e}")
+            error_response = ErrorResponseModel(status=False, detail=f"{e}")
+            raise HTTPException(status_code=500, detail=dict(error_response))
+
+    @classmethod
+    async def get_sweet(cls, sweet_id: str) -> JSONResponse:
+        """
+        Retrieves a sweet by its ID from the database.
+        Returns a JSON response with the sweet details.
+        """
+        try:
+            collection = await cls.get_collection()
+            sweets = collection["Sweets"]
+            sweet = await sweets.find_one({"_id": ObjectId(sweet_id)})
+
+            if not sweet:
+                raise HTTPException(
+                    status_code=404,
+                    detail={"status": False, "detail": "Sweet not found"},
+                )
+
+            sweet["_id"] = str(sweet["_id"])  # Convert ObjectId to string
+            return JSONResponse(
+                content={
+                    "status": True,
+                    "sweet": sweet,
+                    "message": "Sweet retrieved successfully",
+                }
+            )
+        except HTTPException as e:
+            raise e
+
+    @classmethod
+    async def delete_sweet(cls, sweet_id: str) -> JSONResponse:
+        """
+        Deletes a sweet by its ID from the database.
+        Returns a JSON response indicating success or failure.
+        """
+        try:
+            collection = await cls.get_collection()
+            sweets = collection["Sweets"]
+
+            # Validate the ObjectId format for MongoDB
+            if not ObjectId.is_valid(sweet_id):
+                raise HTTPException(
+                    status_code=400,
+                    detail={"status": False, "detail": "Invalid sweet ID format"},
+                )
+
+            # Attempt to delete the sweet
+            result = await sweets.delete_one({"_id": ObjectId(sweet_id)})
+
+            if result.deleted_count == 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail={"status": False, "detail": "Sweet not found"},
+                )
+
+            return JSONResponse(
+                content={
+                    "status": True,
+                    "message": "Sweet deleted successfully",
+                }
+            )
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            print(f"Error deleting sweet: {e}")
+            error_response = ErrorResponseModel(status=False, detail=f"{e}")
+            raise HTTPException(status_code=500, detail=dict(error_response))
+
+    @classmethod
+    async def search_sweets(cls, search_query: str, sort_by: str = None, order: str = "asc") -> JSONResponse:  # type: ignore
+        """
+        Searches for sweets based on a query string.
+        Supports searching by name, category, description, and price.
+        Returns a JSON response with the list of matching sweets.
+        """
+        try:
+            collection = await cls.get_collection()
+            sweets = collection["Sweets"]
+            sweet_list = []
+
+            try:
+                search_price = float(search_query)
+            except ValueError:
+                search_price = None
+
+            query = {
+                "$or": [
+                    {"name": {"$regex": search_query, "$options": "i"}},
+                    {"category": {"$regex": search_query, "$options": "i"}},
+                    {"description": {"$regex": search_query, "$options": "i"}},
+                ]
+            }
+
+            if search_price is not None:
+                query["$or"].append({"price": search_price})  # type: ignore
+
+            # Build sort tuple
+            sort_field = sort_by if sort_by in ["price", "name"] else None
+            sort_order = -1 if order == "desc" else 1
+
+            cursor = sweets.find(query)
+            if sort_field:
+                cursor = cursor.sort(sort_field, sort_order)
+
+            cursor = cursor.limit(15)
+
+            async for sweet in cursor:
+                sweet["_id"] = str(sweet["_id"])
+                sweet_list.append(sweet)
+
+            # Fallback for price search
+            if not sweet_list and search_price is not None:
+                fallback_cursor = sweets.find({"price": {"$gt": search_price}})
+                if sort_field:
+                    fallback_cursor = fallback_cursor.sort(sort_field, sort_order)
+                fallback_cursor = fallback_cursor.limit(15)
+
+                async for sweet in fallback_cursor:
+                    sweet["_id"] = str(sweet["_id"])
+                    sweet_list.append(sweet)
+
+            return JSONResponse(
+                content={
+                    "status": True,
+                    "sweets": sweet_list,
+                    "message": "Sweets retrieved successfully",
+                }
+            )
+
+        except Exception as e:
+            print(f"Error searching sweets: {e}")
+            error_response = ErrorResponseModel(status=False, detail=str(e))
+            raise HTTPException(status_code=500, detail=error_response.dict())
+
+    @classmethod
+    async def purchase_sweet(cls, sweet_id: str, quantity: int) -> dict:
+        """
+        Processes the purchase of a sweet by its ID and quantity.
+        Validates the quantity and updates the sweet's stock.
+        Returns a dictionary with the purchase result.
+        """
+        try:
+            if quantity <= 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "status": False,
+                        "message": "Quantity must be greater than zero",
+                    },
+                )
+            collection = await cls.get_collection()
+            sweets = collection["Sweets"]
+
+            sweet = await sweets.find_one({"_id": ObjectId(sweet_id)})
+            if not sweet:
+                raise HTTPException(
+                    status_code=404,
+                    detail={"status": False, "message": "Sweet not found"},
+                )
+
+            if sweet["quantity"] < quantity:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "status": False,
+                        "message": "Not enough quantity available",
+                    },
+                )
+
+            new_quantity = sweet["quantity"] - quantity
+            await sweets.update_one(
+                {"_id": ObjectId(sweet_id)}, {"$set": {"quantity": new_quantity}}
+            )
+
+            return {
+                "status": True,
+                "message": "Purchase successful",
+                "remaining_quantity": new_quantity,
+            }
+        except HTTPException as e:
+            raise HTTPException(status_code=e.status_code, detail=e.detail)
+        except Exception as e:
+            print(f"Error searching sweets: {e}")
+            error_response = ErrorResponseModel(status=False, detail=str(e))
+            raise HTTPException(
+                status_code=500,
+                detail={"status": False, "message": error_response.dict()},
+            )
+
+    @classmethod
+    async def restock_sweet(cls, sweet_id: str, quantity: int) -> JSONResponse:
+        """
+        Restocks a sweet by its ID and quantity.
+        Validates the quantity and updates the sweet's stock.
+        Returns a JSON response with the restock result.
+        """
+        try:
+            if quantity <= 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "status": False,
+                        "message": "Quantity must be greater than zero",
+                    },
+                )
+            collection = await cls.get_collection()
+            sweets = collection["Sweets"]
+
+            sweet = await sweets.find_one({"_id": ObjectId(sweet_id)})
+            if not sweet:
+                raise HTTPException(
+                    status_code=404,
+                    detail={"status": False, "message": "Sweet not found"},
+                )
+
+            new_quantity = sweet["quantity"] + quantity
+            await sweets.update_one(
+                {"_id": ObjectId(sweet_id)}, {"$set": {"quantity": new_quantity}}
+            )
+
+            return JSONResponse(
+                content={
+                    "status": True,
+                    "message": "Restock successful",
+                    "updated_stock": new_quantity,
+                }
+            )
+        except HTTPException as e:
+            raise HTTPException(status_code=e.status_code, detail=e.detail)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail={"status": False, "message": str(e)}
+            )
 
     @classmethod
     async def create_sweet(
@@ -63,9 +324,9 @@ class SweetController:
             new_sweet = await sweets.insert_one(sweet_dict)
 
             # Send an admin notification email in the background to avoid blocking the response
-            background_tasks.add_task(
-                cls.send_admin_notification, sweet_data.name, sweet_data.category
-            )
+            # background_tasks.add_task(
+            #     cls.send_admin_notification, sweet_data.name, sweet_data.category
+            # )
 
             # Return a success JSON response with the ID of the newly created sweet
             return JSONResponse(
