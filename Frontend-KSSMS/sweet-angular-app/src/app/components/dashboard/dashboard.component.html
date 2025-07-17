@@ -1,0 +1,174 @@
+<div class="dashboard-container">
+    <header class="dashboard-header">
+        <h1>Sweet Shop Dashboard 🍭</h1>
+        <div class="header-actions">
+            <button class="add-sweet-btn" (click)="openAddSweetModal()">
+                <i class="fas fa-plus"></i> Add New Sweet
+            </button>
+        </div>
+        <p>Manage your delicious inventory</p>
+    </header>
+
+    <div *ngIf="loading" class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Loading sweet treats...</p>
+    </div>
+
+    <div *ngIf="error" class="error-message">
+        {{ error }}
+        <button (click)="fetchSweets()">Retry</button>
+    </div>
+
+    <div *ngIf="!loading && !error" class="sweets-grid">
+        <div *ngFor="let sweet of sweets" class="sweet-card">
+            <div class="card-image" [style.backgroundImage]="'url(' + sweet.image_url + ')'"></div>
+            <div class="card-content">
+                <h3>{{ sweet.name }}</h3>
+                <p class="category">{{ sweet.category }}</p>
+                <p class="description">{{ sweet.description }}</p>
+
+                <div class="price-section">
+                    <span class="original-price" *ngIf="sweet.discount > 0">₹{{ sweet.price.toFixed(2) }}</span>
+                    <span class="discounted-price">₹{{ calculateDiscountedPrice(sweet.price, sweet.discount).toFixed(2)
+                        }}</span>
+                    <span *ngIf="sweet.discount > 0" class="discount-badge">{{ sweet.discount }}% OFF</span>
+                </div>
+
+                <div class="stock-section">
+                    <span [class.low-stock]="sweet.quantity < 5">{{ sweet.quantity }} in stock</span>
+                    <span class="availability" [class.available]="sweet.is_available">
+                        {{ sweet.is_available ? 'Available' : 'Out of stock' }}
+                    </span>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="purchase-btn" (click)="openPurchaseModal(sweet)"
+                        [disabled]="!sweet.is_available || sweet.quantity <= 0">
+                        <i class="fas fa-shopping-cart"></i> Purchase
+                    </button>
+                    <button class="restock-btn" (click)="openRestockModal(sweet)">
+                        <i class="fas fa-boxes"></i> Restock
+                    </button>
+                    <button class="delete-btn" (click)="confirmDelete(sweet._id)">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Sweet Modal -->
+    <div *ngIf="showAddModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Add New Sweet</h2>
+            <form (ngSubmit)="addSweet(addForm)" #addForm="ngForm">
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" [(ngModel)]="newSweet.name" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Category:</label>
+                    <select [(ngModel)]="newSweet.category" name="category" required>
+                        <option value="">Select Category</option>
+                        <option value="MILK_BASED">Milk-based</option>
+                        <option value="NUT_BASED">Nut-based</option>
+                        <option value="CHOCOLATE">Chocolate</option>
+                        <option value="CANDY">Candy</option>
+                        <option value="CAKE">Cake</option>
+                        <option value="DRY_FRUIT">Dry fruit</option>
+                        <option value="FRUIT_BASED">Fruit-based</option>
+                        <option value="SUGAR_FREE">Sugar-free</option>
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Price:</label>
+                    <input type="number" [(ngModel)]="newSweet.price" name="price" min="0" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Initial Quantity:</label>
+                    <input type="number" [(ngModel)]="newSweet.quantity" name="quantity" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Discount (%):</label>
+                    <input type="number" [(ngModel)]="newSweet.discount" name="discount" min="0" max="100" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea [(ngModel)]="newSweet.description" name="description" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Image URL:</label>
+                    <input type="url" [(ngModel)]="newSweet.image_url" name="image_url" required>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" [(ngModel)]="newSweet.is_available" name="is_available">
+                        Available
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" (click)="closeAddModal()">Cancel</button>
+                    <button type="submit" [disabled]="!addForm.valid">Add Sweet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Restock Modal -->
+    <div *ngIf="showRestockModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Restock {{ selectedSweet?.name }}</h2>
+            <form (ngSubmit)="restockSweet()">
+                <div class="form-group">
+                    <label>Quantity to Add:</label>
+                    <input type="number" [(ngModel)]="restockQuantity" name="quantity" min="1" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" (click)="closeRestockModal()">Cancel</button>
+                    <button type="submit">Restock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div *ngIf="showPurchaseModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Purchase {{ selectedSweetForPurchase?.name }}</h2>
+            <div class="form-group">
+                <label>Quantity (Max: {{ selectedSweetForPurchase?.quantity }}):</label>
+                <input type="number" [(ngModel)]="purchaseQuantity" min="1"
+                    [max]="selectedSweetForPurchase?.quantity || null">
+            </div>
+            <div class="modal-actions">
+                <button type="button" (click)="closePurchaseModal()">Cancel</button>
+                <button type="button" (click)="addToPurchaseCart()">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Cart -->
+    <div class="purchase-cart" *ngIf="purchaseItems.length > 0">
+        <h3>Your Cart ({{ purchaseItems.length }} items)</h3>
+        <ul>
+            <li *ngFor="let item of purchaseItems; let i = index">
+                {{ getSweetName(item.sweet_id) }} - {{ item.quantity }}
+                <button class="remove-item" (click)="removePurchaseItem(i)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </li>
+        </ul>
+        <button class="checkout-btn" (click)="purchaseSweet()">
+            <i class="fas fa-credit-card"></i> Checkout ({{ getTotalItems() }} items)
+        </button>
+    </div>
+</div>
