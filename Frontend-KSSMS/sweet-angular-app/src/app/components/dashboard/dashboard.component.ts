@@ -46,6 +46,12 @@ export class DashboardComponent implements OnInit {
   purchaseQuantity = 1;
   purchaseItems: PurchaseItem[] = [];
 
+  searchQuery: string = '';
+  sortBy: string = 'name';
+  sortOrder: string = 'asc';
+  categoryFilter: string = '';
+  categories: string[] = [];
+
   newSweet: Partial<Sweet> = {
     name: '',
     category: '',
@@ -67,16 +73,28 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchSweets();
+    this.searchSweets();
   }
 
+  // Replace your existing fetchSweets with this version
   fetchSweets(): void {
+    this.loading = true;
+
     this.http.get<{ status: boolean, sweets: Sweet[] }>(
-      `${this.baseUrl}/getsweets`,
-      { headers: this.apiHeaders }
+      `${this.baseUrl}/searchsweets`,
+      {
+        headers: this.apiHeaders,
+        params: {
+          query: '',
+          sort_by: 'name',
+          order: 'asc'
+        }
+      }
     ).subscribe({
       next: (response) => {
         if (response.status && response.sweets) {
           this.sweets = response.sweets;
+          this.initializeCategories();
         }
         this.loading = false;
       },
@@ -84,6 +102,12 @@ export class DashboardComponent implements OnInit {
         this.error = 'Failed to load sweets. Please try again later.';
         this.loading = false;
         console.error('Error fetching sweets:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Not Found',
+          text: 'Error for fetching Sweets!',
+          confirmButtonColor: '#e74c3c'
+        });
       }
     });
   }
@@ -103,7 +127,22 @@ export class DashboardComponent implements OnInit {
   }
 
   addSweet(form: NgForm): void {
-    if (form.invalid) return;
+    // Mark all fields as touched to show validation messages
+    Object.keys(form.controls).forEach(field => {
+      const control = form.controls[field];
+      control.markAsTouched({ onlySelf: true });
+    });
+
+    if (form.invalid) {
+      // Optionally show a Swal alert for general form error
+      Swal.fire({
+        icon: 'error',
+        title: 'Form Invalid',
+        text: 'Please fix all errors before submitting',
+        confirmButtonColor: '#e74c3c'
+      });
+      return;
+    }
 
     this.http.post<{ status: boolean, sweet_id: string, message: string }>(
       `${this.baseUrl}/addsweet`,
@@ -124,6 +163,13 @@ export class DashboardComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error adding sweet:', err);
+        const errorMsg = err.error?.detail?.message || 'Something went wrong while purchasing.';
+        Swal.fire({
+          icon: 'error',
+          title: 'Sweet not added',
+          text: errorMsg,
+          confirmButtonColor: '#e74c3c'
+        });
       }
     });
   }
@@ -172,6 +218,13 @@ export class DashboardComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error restocking:', err);
+        const errorMsg = err.error?.detail?.message || 'Something went wrong while purchasing.';
+        Swal.fire({
+          icon: 'error',
+          title: 'Sweet not restocked',
+          text: errorMsg,
+          confirmButtonColor: '#e74c3c'
+        });
       }
     });
   }
@@ -189,12 +242,15 @@ export class DashboardComponent implements OnInit {
   }
 
   addToPurchaseCart(): void {
-    if (!this.selectedSweetForPurchase) return;
-
-    this.purchaseItems.push({
-      sweet_id: this.selectedSweetForPurchase._id,
-      quantity: this.purchaseQuantity
-    });
+    const existing = this.purchaseItems.find(item => item.sweet_id === this.selectedSweetForPurchase?._id);
+    if (existing) {
+      existing.quantity += this.purchaseQuantity;
+    } else {
+      this.purchaseItems.push({
+        sweet_id: this.selectedSweetForPurchase!._id,
+        quantity: this.purchaseQuantity
+      });
+    }
 
     this.closePurchaseModal();
   }
@@ -287,7 +343,52 @@ export class DashboardComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error deleting sweet:', err);
+        const errorMsg = err.error?.detail?.message || 'Something went wrong while purchasing.';
+        Swal.fire({
+          icon: 'success',
+          title: 'Sweet not deleted',
+          text: errorMsg,
+          confirmButtonColor: '#43a047'
+        });
       }
     });
   }
+
+  initializeCategories(): void {
+    // Extract unique categories from sweets
+    this.categories = [...new Set(this.sweets.map(sweet => sweet.category))];
+  }
+
+  searchSweets(): void {
+    this.loading = true;
+
+    const params = {
+      query: this.searchQuery,
+      sort_by: this.sortBy,
+      order: this.sortOrder,
+      category: this.categoryFilter
+    };
+
+    this.http.get<{ status: boolean, sweets: Sweet[] }>(
+      `${this.baseUrl}/searchsweets`,
+      {
+        headers: this.apiHeaders,
+        params: params
+      }
+    ).subscribe({
+      next: (response) => {
+        if (response.status && response.sweets) {
+          this.sweets = response.sweets;
+          this.initializeCategories(); // Update available categories
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = 'Failed to load sweets. Please try again later.';
+        this.loading = false;
+        console.error('Error searching sweets:', err);
+      }
+    });
+  }
+
 }

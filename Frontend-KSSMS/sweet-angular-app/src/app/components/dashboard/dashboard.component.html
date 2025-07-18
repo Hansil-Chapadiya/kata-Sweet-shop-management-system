@@ -2,6 +2,30 @@
     <header class="dashboard-header">
         <h1>Sweet Shop Dashboard 🍭</h1>
         <div class="header-actions">
+            <div class="search-filter-container">
+                <div class="search-box">
+                    <input type="text" [(ngModel)]="searchQuery" placeholder="Search sweets..."
+                        (input)="searchSweets()">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="filter-controls">
+                    <select [(ngModel)]="sortBy" (change)="searchSweets()">
+                        <option value="name">Sort by Name</option>
+                        <option value="price">Sort by Price</option>
+                        <option value="category">Sort by Category</option>
+                    </select>
+                    <select [(ngModel)]="sortOrder" (change)="searchSweets()">
+                        <option value="asc">Ascending</option>
+                        <option value="desc">Descending</option>
+                    </select>
+                    <select [(ngModel)]="categoryFilter" (change)="searchSweets()">
+                        <option value="">All Categories</option>
+                        <option *ngFor="let category of categories" [value]="category">
+                            {{ category }}
+                        </option>
+                    </select>
+                </div>
+            </div>
             <button class="add-sweet-btn" (click)="openAddSweetModal()">
                 <i class="fas fa-plus"></i> Add New Sweet
             </button>
@@ -57,7 +81,7 @@
         </div>
     </div>
 
-    <!-- Add Sweet Modal -->
+    <!-- Add Sweet Modal
     <div *ngIf="showAddModal" class="modal-overlay">
         <div class="modal-content">
             <h2>Add New Sweet</h2>
@@ -109,6 +133,92 @@
                 </div>
 
                 <div class="form-group">
+                    <label>
+                        <input type="checkbox" [(ngModel)]="newSweet.is_available" name="is_available">
+                        Available
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" (click)="closeAddModal()">Cancel</button>
+                    <button type="submit" [disabled]="!addForm.valid">Add Sweet</button>
+                </div>
+            </form>
+        </div>
+    </div> -->
+    <!-- Add Sweet Modal -->
+    <div *ngIf="showAddModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Add New Sweet</h2>
+            <form (ngSubmit)="addSweet(addForm)" #addForm="ngForm">
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" [(ngModel)]="newSweet.name" name="name" required #name="ngModel">
+                    <div *ngIf="name.invalid && (name.dirty || name.touched)" class="validation-error">
+                        <div *ngIf="name.errors?.['required']">Name is required</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Category:</label>
+                    <select [(ngModel)]="newSweet.category" name="category" required #category="ngModel">
+                        <option value="">Select Category</option>
+                        <option value="Milk-based">Milk-based</option>
+                        <option value="Nut-based">Nut-based</option>
+                        <option value="Chocolate">Chocolate</option>
+                        <option value="Candy">Candy</option>
+                        <option value="Cake">Cake</option>
+                        <option value="Pastry">Pastry</option>
+                        <option value="Dry Fruit">Dry Fruit</option>
+                        <option value="Fruit-based">Fruit-based</option>
+                        <option value="Sugar-free">Sugar-free</option>
+                    </select>
+                    <div *ngIf="category.invalid && (category.dirty || category.touched)" class="validation-error">
+                        <div *ngIf="category.errors?.['required']">Category is required</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Price:</label>
+                    <input type="number" [(ngModel)]="newSweet.price" name="price" min="0" step="0.01" required
+                        #price="ngModel">
+                    <div *ngIf="price.invalid && (price.dirty || price.touched)" class="validation-error">
+                        <div *ngIf="price.errors?.['required']">Price is required</div>
+                        <div *ngIf="price.errors?.['min']">Price must be positive</div>
+                    </div>
+                </div>
+
+                <!-- Add similar validation for other fields -->
+                <div class="form-group">
+                    <label>Initial Quantity:</label>
+                    <input type="number" [(ngModel)]="newSweet.quantity" name="quantity" min="0" required
+                        #quantity="ngModel">
+                    <div *ngIf="quantity.invalid && (quantity.dirty || quantity.touched)" class="validation-error">
+                        <div *ngIf="quantity.errors?.['required']">Quantity is required</div>
+                        <div *ngIf="quantity.errors?.['min']">Quantity can't be negative</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea [(ngModel)]="newSweet.description" name="description" required
+                        #description="ngModel"></textarea>
+                    <div *ngIf="description.invalid && (description.dirty || description.touched)"
+                        class="validation-error">
+                        <div *ngIf="description.errors?.['required']">Description is required</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Image URL:</label>
+                    <input type="url" [(ngModel)]="newSweet.image_url" name="image_url" required #imageUrl="ngModel">
+                    <div *ngIf="imageUrl.invalid && (imageUrl.dirty || imageUrl.touched)" class="validation-error">
+                        <div *ngIf="imageUrl.errors?.['required']">Image URL is required</div>
+                        <div *="imageUrl.errors?.['url']">Please enter a valid URL</div>
+                    </div>
+                </div>
+
+                <div class="form-group checkbox-group">
                     <label>
                         <input type="checkbox" [(ngModel)]="newSweet.is_available" name="is_available">
                         Available
