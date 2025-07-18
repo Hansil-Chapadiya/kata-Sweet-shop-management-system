@@ -109,7 +109,7 @@ This is a full-stack **Sweet Shop Inventory Management System** that allows you 
 
 | Frontend        | Backend          | Database | Styling      |
 | --------------- | ---------------- | -------- | ------------ |
-| Next.js (React) | FastAPI (Python) | MongoDB  | Tailwind CSS |
+| Angular14       | FastAPI (Python) | MongoDB  | Tailwind CSS |
 
 ---
 
