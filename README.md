@@ -1,8 +1,3 @@
-# 🍬 Kata Sweet Shop Management System
-
-## ⚠️ PLEASE WAIT ⏳
-### 💤 The API is hosted on Render and may take up to **50 seconds** to wake up after inactivity. Please be patient while waiting for responses.
-
 ---
 # 🍬 Kata Sweet Shop Management System (Angular + FastAPI)
 
